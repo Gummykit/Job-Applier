@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Profile {
+  id           String   @id @default("default")
+  fullName     String?
+  email        String?
+  phone        String?
+  location     String?
+  resumeJson   String
+  rawText      String?
+  originalFile String?
+  originalName String?
+  preferences  String   @default("{}")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Job {
+  id           String           @id @default(cuid())
+  url          String?
+  title        String?
+  company      String?
+  location     String?
+  description  String?
+  details      String           @default("{}")
+  sourceText   String?
+  status       String           @default("importing")
+  error        String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  tailored     TailoredResume[]
+  applications Application[]
+}
+
+model TailoredResume {
+  id              String   @id @default(cuid())
+  jobId           String
+  job             Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  resumeJson      String
+  coverLetter     String?
+  changes         String   @default("[]")
+  matchScore      Int?
+  missingKeywords String   @default("[]")
+  pdfPath         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Application {
+  id              String    @id @default(cuid())
+  jobId           String
+  job             Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  status          String    @default("queued")
+  autoSubmit      Boolean   @default(true)
+  summary         String?
+  log             String    @default("[]")
+  cancelRequested Boolean   @default(false)
+  inputTokens     Int       @default(0)
+  outputTokens    Int       @default(0)
+  createdAt       DateTime  @default(now())
+  startedAt       DateTime?
+  finishedAt      DateTime?
+}
+
+model Setting {
+  id         String  @id @default("default")
+  model      String?
+  headless   Boolean @default(false)
+  autoSubmit Boolean @default(true)
+}
