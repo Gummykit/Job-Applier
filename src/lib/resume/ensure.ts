@@ -26,8 +26,8 @@ export async function jobForTailoring(jobId: string): Promise<JobForTailoring> {
 export async function createTailoredResume(jobId: string, profile: LoadedProfile) {
   const job = await jobForTailoring(jobId);
   const [tailored, coverLetter] = await Promise.all([
-    tailorResume(profile.resume, job),
-    generateCoverLetter(profile.resume, job).catch(() => null),
+    tailorResume(profile.resume, job, profile.userId),
+    generateCoverLetter(profile.resume, job, profile.userId).catch(() => null),
   ]);
   const row = await prisma.tailoredResume.create({
     data: {

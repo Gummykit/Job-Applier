@@ -43,8 +43,8 @@ Rules:
 - Keep contact details, links, education, certifications and languages factually unchanged (reordering is fine).
 - changes: list each concrete edit you made. missingKeywords: important requirements the candidate does not evidence (do not add them to the resume). matchScore: an honest 0-100 estimate of fit.`;
 
-export async function tailorResume(resume: Resume, job: JobForTailoring): Promise<TailorResult> {
-  const { model } = await getSettings();
+export async function tailorResume(resume: Resume, job: JobForTailoring, userId: string): Promise<TailorResult> {
+  const { model } = await getSettings(userId);
   const res = await ai().messages.parse({
     model,
     max_tokens: 16000,
@@ -65,8 +65,8 @@ export async function tailorResume(resume: Resume, job: JobForTailoring): Promis
 
 const COVER_SYSTEM = `You write concise, specific cover letters (180-280 words) in the candidate's voice. Plain text, no markdown, no placeholders, no address block. Open with a direct statement of interest in the role and company, give two or three concrete examples from the resume that map to the job's requirements, and close with a short confident paragraph. Never claim anything not supported by the resume. Sign off with the candidate's name.`;
 
-export async function generateCoverLetter(resume: Resume, job: JobForTailoring): Promise<string> {
-  const { model } = await getSettings();
+export async function generateCoverLetter(resume: Resume, job: JobForTailoring, userId: string): Promise<string> {
+  const { model } = await getSettings(userId);
   const stream = ai().messages.stream({
     model,
     max_tokens: 4000,

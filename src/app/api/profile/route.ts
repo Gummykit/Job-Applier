@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { handle, jsonError } from "@/lib/api";
+import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { PROFILE_ID } from "@/lib/profile";
 import { ResumeSchema } from "@/lib/schemas";
 
 export const PUT = handle(async (req: Request) => {
+  const user = await requireApiUser();
   const body = (await req.json()) as { resume?: unknown; preferences?: Record<string, string> };
-  const existing = await prisma.profile.findUnique({ where: { id: PROFILE_ID } });
+  const existing = await prisma.profile.findUnique({ where: { userId: user.id } });
   if (!existing) return jsonError("Upload a resume first.", 404);
 
   const data: Record<string, unknown> = {};
@@ -20,6 +21,6 @@ export const PUT = handle(async (req: Request) => {
     data.location = parsed.data.basics.location;
   }
   if (body.preferences !== undefined) data.preferences = JSON.stringify(body.preferences);
-  await prisma.profile.update({ where: { id: PROFILE_ID }, data });
+  await prisma.profile.update({ where: { userId: user.id }, data });
   return NextResponse.json({ ok: true });
 });

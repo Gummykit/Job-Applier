@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import type { LogEntry } from "@/lib/agent/run";
 import { safeJson } from "@/lib/utils";
@@ -8,7 +9,8 @@ export const dynamic = "force-dynamic";
 
 export default async function ApplicationPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const app = await prisma.application.findUnique({ where: { id }, include: { job: { select: { id: true, title: true, company: true, url: true } } } });
+  const user = await requireUser();
+  const app = await prisma.application.findFirst({ where: { id, userId: user.id }, include: { job: { select: { id: true, title: true, company: true, url: true } } } });
   if (!app) notFound();
   return (
     <ApplicationLive

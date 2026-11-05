@@ -54,7 +54,7 @@ export async function runApplication(appId: string): Promise<void> {
   let active: Page | null = null;
   let finalStatus: FinalStatus = "failed";
   let summary = "";
-  const ctx = await getBrowserContext();
+  const ctx = await getBrowserContext(app.userId);
   const onNewPage = async (p: Page) => {
     try {
       await p.waitForLoadState("domcontentloaded", { timeout: 15000 });
@@ -66,7 +66,7 @@ export async function runApplication(appId: string): Promise<void> {
   };
 
   try {
-    const profile = await getProfile();
+    const profile = await getProfile(app.userId);
     if (!profile) throw new Error("No resume uploaded yet. Add one on the Profile page first.");
     const job = app.job;
     if (job.status !== "ready" || !job.url) throw new Error("The job must be imported from a URL before applying.");
@@ -76,7 +76,7 @@ export async function runApplication(appId: string): Promise<void> {
     const files = await ensureTailoredResume(job.id, profile);
     await push({ type: "info", text: `Using ${path.basename(files.resumePdf)}${files.coverLetterPdf ? " and a cover letter" : ""}.` });
 
-    const settings = await getSettings();
+    const settings = await getSettings(app.userId);
     page = await ctx.newPage();
     active = page;
     ctx.on("page", onNewPage);

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { apiKeyConfigured } from "@/lib/ai";
+import { requireUser } from "@/lib/auth";
 import { browserStatus } from "@/lib/browser/context";
 import { prisma } from "@/lib/db";
 import { getProfile } from "@/lib/profile";
@@ -10,16 +11,17 @@ import { Badge, Card, LinkButton, PageHeader, Stat } from "@/components/ui";
 export const dynamic = "force-dynamic";
 
 export default async function Dashboard() {
+  const user = await requireUser();
   const [profile, jobs, recent, counts] = await Promise.all([
-    getProfile(),
-    prisma.job.findMany({ select: { status: true } }),
-    prisma.application.findMany({ orderBy: { createdAt: "desc" }, take: 8, include: { job: { select: { title: true, company: true } } } }),
-    prisma.application.groupBy({ by: ["status"], _count: { _all: true } }),
+    getProfile(user.id),
+    prisma.job.findMany({ where: { userId: user.id }, select: { status: true } }),
+    prisma.application.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 8, include: { job: { select: { title: true, company: true } } } }),
+    prisma.application.groupBy({ by: ["status"], where: { userId: user.id }, _count: { _all: true } }),
   ]);
   const count = (s: string) => counts.find((c) => c.status === s)?._count._all ?? 0;
   const jobsReady = jobs.filter((j) => j.status === "ready").length;
   const jobsImporting = jobs.filter((j) => j.status === "importing").length;
-  const browser = browserStatus();
+  const browser = browserStatus(user.id);
   const keyOk = apiKeyConfigured();
   const active = count("running") + count("queued") > 0 || jobsImporting > 0;
 

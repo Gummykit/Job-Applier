@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
-import { handle, jsonError } from "@/lib/api";
+import { ownedApplication } from "@/lib/access";
+import { handle } from "@/lib/api";
+import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 export const POST = handle(async (_req: Request, { params }: Ctx) => {
+  const user = await requireApiUser();
   const { id } = await params;
-  const app = await prisma.application.findUnique({ where: { id } });
-  if (!app) return jsonError("Not found.", 404);
+  const app = await ownedApplication(id, user.id);
   if (app.status === "queued") {
     await prisma.application.update({
       where: { id },

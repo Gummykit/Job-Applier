@@ -2,14 +2,15 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
 import { handle, jsonError } from "@/lib/api";
+import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { UPLOADS_DIR, ensureDirs } from "@/lib/paths";
-import { PROFILE_ID } from "@/lib/profile";
 import { extractResumeContent, parseResume } from "@/lib/resume/parse";
 
 export const maxDuration = 300;
 
 export const POST = handle(async (req: Request) => {
+  const user = await requireApiUser();
   const form = await req.formData();
   const file = form.get("file");
   if (!(file instanceof File)) return jsonError("Attach a resume file.");
@@ -18,11 +19,13 @@ export const POST = handle(async (req: Request) => {
   ensureDirs();
   const buffer = Buffer.from(await file.arrayBuffer());
   const safeName = path.basename(file.name).replace(/[^A-Za-z0-9._-]+/g, "_");
-  const stored = path.join(UPLOADS_DIR, `${Date.now()}-${safeName}`);
+  const dir = path.join(UPLOADS_DIR, user.id);
+  await fs.mkdir(dir, { recursive: true });
+  const stored = path.join(dir, `${Date.now()}-${safeName}`);
   await fs.writeFile(stored, buffer);
 
   const content = await extractResumeContent(buffer, file.name);
-  const resume = await parseResume(content);
+  const resume = await parseResume(content, user.id);
   const fields = {
     fullName: resume.basics.name,
     email: resume.basics.email,
@@ -34,8 +37,8 @@ export const POST = handle(async (req: Request) => {
     originalName: file.name,
   };
   const profile = await prisma.profile.upsert({
-    where: { id: PROFILE_ID },
-    create: { id: PROFILE_ID, ...fields },
+    where: { userId: user.id },
+    create: { userId: user.id, ...fields },
     update: fields,
   });
   return NextResponse.json({ ok: true, profileId: profile.id, name: resume.basics.name });

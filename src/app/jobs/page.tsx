@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/utils";
 import { AddJobsForm } from "@/components/AddJobsForm";
@@ -9,7 +10,9 @@ import { Badge, Card, EmptyState, PageHeader } from "@/components/ui";
 export const dynamic = "force-dynamic";
 
 export default async function JobsPage() {
+  const user = await requireUser();
   const jobs = await prisma.job.findMany({
+    where: { userId: user.id },
     orderBy: { createdAt: "desc" },
     include: {
       tailored: { orderBy: { createdAt: "desc" }, take: 1, select: { matchScore: true } },

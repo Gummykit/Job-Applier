@@ -8,8 +8,8 @@ export type Settings = {
 
 export const DEFAULT_MODEL = "claude-opus-5-5";
 
-export async function getSettings(): Promise<Settings> {
-  const s = await prisma.setting.findUnique({ where: { id: "default" } });
+export async function getSettings(userId: string): Promise<Settings> {
+  const s = await prisma.setting.findUnique({ where: { userId } });
   return {
     model: s?.model || process.env.AUTOAPPLY_MODEL || DEFAULT_MODEL,
     headless: s?.headless ?? false,
@@ -17,11 +17,15 @@ export async function getSettings(): Promise<Settings> {
   };
 }
 
-export async function saveSettings(input: Partial<Settings>): Promise<Settings> {
+export async function saveSettings(userId: string, input: Partial<Settings>): Promise<Settings> {
   await prisma.setting.upsert({
-    where: { id: "default" },
-    create: { id: "default", model: input.model ?? null, headless: input.headless ?? false, autoSubmit: input.autoSubmit ?? true },
-    update: { ...(input.model !== undefined ? { model: input.model || null } : {}), ...(input.headless !== undefined ? { headless: input.headless } : {}), ...(input.autoSubmit !== undefined ? { autoSubmit: input.autoSubmit } : {}) },
+    where: { userId },
+    create: { userId, model: input.model || null, headless: input.headless ?? false, autoSubmit: input.autoSubmit ?? true },
+    update: {
+      ...(input.model !== undefined ? { model: input.model || null } : {}),
+      ...(input.headless !== undefined ? { headless: input.headless } : {}),
+      ...(input.autoSubmit !== undefined ? { autoSubmit: input.autoSubmit } : {}),
+    },
   });
-  return getSettings();
+  return getSettings(userId);
 }

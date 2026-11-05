@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { EMPTY_DETAILS, type JobDetails } from "@/lib/jobs/extract";
 import { getProfile } from "@/lib/profile";
@@ -16,16 +17,17 @@ export const dynamic = "force-dynamic";
 
 export default async function JobPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const user = await requireUser();
   const [job, profile, settings] = await Promise.all([
-    prisma.job.findUnique({
-      where: { id },
+    prisma.job.findFirst({
+      where: { id, userId: user.id },
       include: {
         tailored: { orderBy: { createdAt: "desc" }, take: 1 },
         applications: { orderBy: { createdAt: "desc" } },
       },
     }),
-    getProfile(),
-    getSettings(),
+    getProfile(user.id),
+    getSettings(user.id),
   ]);
   if (!job) notFound();
 

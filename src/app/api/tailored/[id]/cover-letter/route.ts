@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { ownedTailored } from "@/lib/access";
 import { handle, jsonError } from "@/lib/api";
+import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { jobForTailoring } from "@/lib/resume/ensure";
 import { generateCoverLetter } from "@/lib/resume/tailor";
@@ -10,12 +12,12 @@ export const maxDuration = 300;
 type Ctx = { params: Promise<{ id: string }> };
 
 export const POST = handle(async (_req: Request, { params }: Ctx) => {
+  const user = await requireApiUser();
   const { id } = await params;
-  const row = await prisma.tailoredResume.findUnique({ where: { id } });
-  if (!row) return jsonError("Not found.", 404);
+  const row = await ownedTailored(id, user.id);
   const resume = safeJson<Resume | null>(row.resumeJson, null);
   if (!resume) return jsonError("Corrupt resume data.", 500);
-  const coverLetter = await generateCoverLetter(resume, await jobForTailoring(row.jobId));
-  await prisma.tailoredResume.update({ where: { id }, data: { coverLetter } });
+  const coverLetter = await generateCoverLetter(resume, await jobForTailoring(row.jobId), user.id);
+  await prisma.tailoredResume.update({ where: { id: row.id }, data: { coverLetter } });
   return NextResponse.json({ ok: true, coverLetter });
 });

@@ -1,4 +1,5 @@
 import { apiKeyConfigured } from "@/lib/ai";
+import { requireUser } from "@/lib/auth";
 import { browserStatus } from "@/lib/browser/context";
 import { getSettings } from "@/lib/settings";
 import { SettingsForm } from "@/components/SettingsForm";
@@ -8,8 +9,9 @@ import { Alert, Card, PageHeader } from "@/components/ui";
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  const settings = await getSettings();
-  const browser = browserStatus();
+  const user = await requireUser();
+  const settings = await getSettings(user.id);
+  const browser = browserStatus(user.id);
   const keyOk = apiKeyConfigured();
   return (
     <>

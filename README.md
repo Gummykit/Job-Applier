@@ -11,6 +11,10 @@ A local web app that reads your resume, imports the jobs you want, tailors your 
 
 If a site needs a login, CAPTCHA or 2FA, the agent stops with status *needs review* and leaves the tab open for you.
 
+## Accounts
+
+Each person creates their own account (email + password) and gets a private profile, job list, applications, settings and browser profile. Sessions are cookie-based and stored in the database; passwords are hashed with scrypt. Set `AUTOAPPLY_ALLOW_SIGNUP=false` in `.env` to close registration once everyone has an account.
+
 ## Setup
 
 ```bash
@@ -30,6 +34,7 @@ Sign in to the job sites you use once via **Settings → Browser & sign-ins**; s
 
 ## Notes
 
-- Everything (database, uploads, PDFs, screenshots, browser profile) lives in `.data/`, which is git-ignored.
+- Everything (database, uploads, PDFs, screenshots, per-user browser profiles) lives in `.data/`, which is git-ignored.
+- One Anthropic API key on the server pays for every user's runs.
 - Automated applications violate some job boards' terms of service (notably LinkedIn's). Use your own judgement and keep volume reasonable.
 - The agent only ever uses facts from your profile; it is instructed never to fabricate experience, authorization or credentials.

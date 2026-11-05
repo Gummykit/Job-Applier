@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/utils";
 import { AutoRefresh } from "@/components/AutoRefresh";
@@ -7,7 +8,8 @@ import { Badge, Card, EmptyState, LinkButton, PageHeader } from "@/components/ui
 export const dynamic = "force-dynamic";
 
 export default async function ApplicationsPage() {
-  const apps = await prisma.application.findMany({ orderBy: { createdAt: "desc" }, include: { job: { select: { id: true, title: true, company: true } } } });
+  const user = await requireUser();
+  const apps = await prisma.application.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, include: { job: { select: { id: true, title: true, company: true } } } });
   const active = apps.some((a) => a.status === "running" || a.status === "queued");
   return (
     <>

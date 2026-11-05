@@ -1,14 +1,18 @@
 import fs from "node:fs";
 import path from "node:path";
+import { ownedApplication } from "@/lib/access";
 import { handle, jsonError } from "@/lib/api";
+import { requireApiUser } from "@/lib/auth";
 import { APPLICATIONS_DIR } from "@/lib/paths";
 
 export const dynamic = "force-dynamic";
 type Ctx = { params: Promise<{ id: string; file: string }> };
 
 export const GET = handle(async (_req: Request, { params }: Ctx) => {
+  const user = await requireApiUser();
   const { id, file } = await params;
   if (!/^[A-Za-z0-9_-]+$/.test(id) || !/^[A-Za-z0-9_-]+\.jpg$/.test(file)) return jsonError("Bad path.");
+  await ownedApplication(id, user.id);
   const full = path.join(APPLICATIONS_DIR, id, file);
   if (!fs.existsSync(full)) return jsonError("Not found.", 404);
   const bytes = await fs.promises.readFile(full);

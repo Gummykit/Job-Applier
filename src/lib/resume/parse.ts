@@ -21,8 +21,8 @@ export async function extractResumeContent(buffer: Buffer, filename: string): Pr
 
 const SYSTEM = `You convert resumes into structured data. Preserve the candidate's wording and facts exactly: never invent, infer, or embellish anything that is not in the document. Keep every bullet point and every role. Use null for anything that is missing. Keep dates as written (e.g. "Jan 2021"). If the resume lists skills without categories, group them into a few sensible categories. Collect LinkedIn, GitHub, portfolio and other URLs into links.`;
 
-export async function parseResume(content: ResumeContent): Promise<Resume> {
-  const { model } = await getSettings();
+export async function parseResume(content: ResumeContent, userId: string): Promise<Resume> {
+  const { model } = await getSettings(userId);
   const instruction = "Extract this resume into the requested structure.";
   const userContent: Anthropic.ContentBlockParam[] =
     content.kind === "pdf"
